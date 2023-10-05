@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.TNTPrimeEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
@@ -33,6 +34,13 @@ public class Events implements Listener {
         Block b = e.getBlock();
         if (b.getType() == Material.TNT && b.getType() != Material.AIR) {
             Bukkit.broadcastMessage(String.format("%s%sPlayer %s%s %splaced a %sTNT %sblock!", prefix, g, a, e.getPlayer().getName(), g, r, g));
+        }
+    }
+
+    @EventHandler
+    public void onDispense(BlockDispenseEvent e) {
+        if (e.getItem().getType() == Material.TNT) {
+            Bukkit.broadcastMessage(String.format("%s%sa %sDispenser %sdispensed a %sTNT %sblock!", prefix, g, a, g, r, g));
         }
     }
 
