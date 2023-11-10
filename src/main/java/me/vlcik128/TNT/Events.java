@@ -39,8 +39,14 @@ public class Events implements Listener {
 
     @EventHandler
     public void onDispense(BlockDispenseEvent e) {
-        if (e.getItem().getType() == Material.TNT && e.getBlock().getType() == Material.DISPENSER) {
-            Bukkit.broadcastMessage(String.format("%s%sa %sDispenser %sdispensed a %sTNT %sblock!", prefix, g, a, g, r, g));
+        if(e.getBlock().getType() == Material.DISPENSER){
+            Material m = e.getItem().getType();
+            if (m == Material.TNT) {
+                Bukkit.broadcastMessage(String.format("%s%sa %sDispenser %sdispensed a %sTNT %sblock!", prefix, g, a, g, r, g));
+            }
+            if (m == Material.TNT_MINECART) {
+                Bukkit.broadcastMessage(String.format("%s%sa %sDispenser %sdispensed a %sTNT minecart!", prefix, g, a, g, r));
+            }
         }
     }
 
