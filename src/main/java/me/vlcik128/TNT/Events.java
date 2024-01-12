@@ -19,82 +19,86 @@ import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
+@SuppressWarnings("deprecation")
 public class Events implements Listener {
 
-    private final ChatColor a = ChatColor.AQUA;
-    private final ChatColor g = ChatColor.GOLD;
-    private final ChatColor r = ChatColor.RED;
-    private final ChatColor R = ChatColor.RED;
+	private final List<Material> rails = new ArrayList<>(
+			Arrays.asList(Material.ACTIVATOR_RAIL, Material.DETECTOR_RAIL, Material.POWERED_RAIL, Material.RAIL));
 
-    private final List<Material> rails = new ArrayList<>(Arrays.asList(Material.ACTIVATOR_RAIL, Material.DETECTOR_RAIL, Material.POWERED_RAIL, Material.RAIL));
-    private final String prefix = R + "[" + r + "T" + ChatColor.WHITE + "N" + r + "T" + R + "] ";
+	@EventHandler
+	public void onPlace(BlockPlaceEvent e) {
+		if (e.getBlock().getType() == Material.TNT) {
+			announce(String.format("Player &b%s &6placed the &cTNT &6block!", e.getPlayer().getName()));
+		}
+	}
 
-    @EventHandler
-    public void onPlace(BlockPlaceEvent e) {
-        Block b = e.getBlock();
-        if (b.getType() == Material.TNT && b.getType() != Material.AIR) {
-            Bukkit.broadcastMessage(String.format("%s%sPlayer %s%s %splaced a %sTNT %sblock!", prefix, g, a, e.getPlayer().getName(), g, r, g));
-        }
-    }
+	@EventHandler
+	public void onDispense(BlockDispenseEvent e) {
+		if (e.getBlock().getType() == Material.DISPENSER) {
+			Material m = e.getItem().getType();
+			if (m == Material.TNT) {
+				announce("a &bDispenser &6dispensed a &cTNT &6block!");
+			}
+			if (m == Material.TNT_MINECART) {
+				announce("a &bDispenser &6dispensed a &cTNT minecart&6!");
+			}
+		}
+	}
 
-    @EventHandler
-    public void onDispense(BlockDispenseEvent e) {
-        if(e.getBlock().getType() == Material.DISPENSER){
-            Material m = e.getItem().getType();
-            if (m == Material.TNT) {
-                Bukkit.broadcastMessage(String.format("%s%sa %sDispenser %sdispensed a %sTNT %sblock!", prefix, g, a, g, r, g));
-            }
-            if (m == Material.TNT_MINECART) {
-                Bukkit.broadcastMessage(String.format("%s%sa %sDispenser %sdispensed a %sTNT minecart!", prefix, g, a, g, r));
-            }
-        }
-    }
+	@EventHandler
+	public void onExplode(ExplosionPrimeEvent e) {
+		EntityType et = e.getEntity().getType();
+		if (et == EntityType.MINECART_TNT) {
+			announce("the &cTNT minecart &6was activated!");
+		} else if (et == EntityType.ENDER_CRYSTAL) {
+			announce("the &cEnd Crystal &6was activated!");
+		}
+	}
 
-    @EventHandler
-    public void onExplode(ExplosionPrimeEvent e) {
-        if (e.getEntity().getType() == EntityType.MINECART_TNT) {
-            Bukkit.broadcastMessage(String.format("%s%sthe %sTNT minecart %swas activated!", prefix, g, a, g));
-        }
-        if (e.getEntity().getType() == EntityType.ENDER_CRYSTAL) {
-            Bukkit.broadcastMessage(String.format("%s%sthe %sEnd Crystal %swas activated!", prefix, g, a, g));
-        }
-    }
+	@EventHandler
+	public void onTNTPrime(TNTPrimeEvent e) { // migrate old message to TNTPrimeEvent
+		switch (e.getCause()) {
+		case PLAYER:
+			// if a player is trying to light tnt manually... (also an indirect NULL check)
+			if (e.getPrimingEntity().getType() == EntityType.PLAYER) {
+				Player p = (Player) e.getPrimingEntity();
+				announce(String.format("Player &b%s &6activated the &cTNT&6!", p.getName()));
+			}
+			break;
+		case REDSTONE:
+			announce("a &bRedstone signal &6activated the &cTNT&6!");
+			break;
+		case PROJECTILE:
+			announce(String.format("a &b%s &6activated the &cTNT&6!",
+					e.getPrimingEntity().getType().name().toLowerCase().replace("_", " ")));
+			break;
+		case DISPENSER: //may be redundant due to modispencermachanics the Dispenser-Block showing as a player
+			announce("a &bDispenser &6activated the &cTNT&6!");
+		default:
+			break;
+		}
+	}
 
-    @EventHandler
-    public void onTNTPrime(TNTPrimeEvent e) { //migrate old message to TNTPrimeEvent
-        switch (e.getCause()) {
-            case PLAYER:
-                //if a player is trying to light tnt
-                if (e.getPrimingEntity().getType() == EntityType.PLAYER) {
-                    Player p = (Player) e.getPrimingEntity();
-                    Bukkit.broadcastMessage(String.format("%s%sPlayer %s%s %sactivated the TNT!", prefix, g, a, p.getName(), g));
-                }
-                break;
-            case REDSTONE:
-                Bukkit.broadcastMessage(String.format("%s%sa %sRedstone signal %sactivated the TNT!", prefix, g, a, g));
-                break;
-            case PROJECTILE:
-                Bukkit.broadcastMessage(String.format("%s%sa %sFlaming arrow %sactivated the TNT!", prefix, g, a, g));
-        }
-    }
+	@EventHandler
+	public void onClick(PlayerInteractEvent e) {
+		Block b = e.getClickedBlock();
+		ItemStack is = e.getItem();
+		if (is != null && b != null) { // null checks
+			String pln = e.getPlayer().getName();
+			if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+				// if player is trying to place a tnt minecart on rails
+				if (is.getType() == Material.TNT_MINECART && rails.contains(b.getType())) {
+					announce(String.format("Player &b%s &6placed the &cTNT minecart&6!", pln));
+				} else if (is.getType() == Material.END_CRYSTAL
+						&& (b.getType() == Material.OBSIDIAN || b.getType() == Material.BEDROCK)) {
+					announce(String.format("Player &b%s &6placed the &cEnd Crystal&6!", pln));
+				}
+			}
+		}
+	}
 
-    @EventHandler
-    public void onClick(PlayerInteractEvent e) {
-        Block b = e.getClickedBlock();
-        ItemStack is = e.getItem();
-        if (is != null && b != null) { //null checks
-            if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-                Material mat = is.getType();
-                //if player is trying to place a tnt minecart on rails
-                if (mat == Material.TNT_MINECART && rails.contains(b.getType())) {
-                    Bukkit.broadcastMessage(String.format("%s%sPlayer %s%s %splaced a %sTNT minecart%s!", prefix, g, a, e.getPlayer().getName(), g, r, g));
-                }
-                //if player is trying to place an end crystal
-                if (mat == Material.END_CRYSTAL && (b.getType() == Material.OBSIDIAN || b.getType() == Material.BEDROCK)) {
-                    Bukkit.broadcastMessage(String.format("%s%sPlayer %s%s %splaced a %sEnd Crystal%s!", prefix, g, a, e.getPlayer().getName(), g, r, g));
-
-                }
-            }
-        }
-    }
+	// duplicate code removal
+	public static void announce(String message) {
+		Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&4[&cT&fN&cT&4] &6" + message));
+	}
 }
